@@ -79,120 +79,125 @@ export function initDatabase() {
   console.log('Database initialized');
 }
 
-// Agent operations
+// Lazy-init queries (prepared after initDatabase is called)
+let _agentQueries: any = null;
+let _tradeQueries: any = null;
+let _leaderboardQueries: any = null;
+let _subscriberQueries: any = null;
+
+function getAgentQueries() {
+  if (!_agentQueries) {
+    _agentQueries = {
+      create: db.prepare(`
+        INSERT INTO agents (wallet_address, name, description, twitter, telegram, moltbook)
+        VALUES (@wallet_address, @name, @description, @twitter, @telegram, @moltbook)
+      `),
+      getByWallet: db.prepare(`SELECT * FROM agents WHERE wallet_address = ?`),
+      getById: db.prepare(`SELECT * FROM agents WHERE id = ?`),
+      getPending: db.prepare(`SELECT * FROM agents WHERE status = 'pending' ORDER BY created_at ASC`),
+      getVerified: db.prepare(`SELECT * FROM agents WHERE verified = TRUE ORDER BY name ASC`),
+      approve: db.prepare(`
+        UPDATE agents 
+        SET verified = TRUE, status = 'approved', verification_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `),
+      reject: db.prepare(`UPDATE agents SET status = 'rejected', updated_at = CURRENT_TIMESTAMP WHERE id = ?`),
+      delist: db.prepare(`UPDATE agents SET verified = FALSE, status = 'delisted', updated_at = CURRENT_TIMESTAMP WHERE id = ?`),
+    };
+  }
+  return _agentQueries;
+}
+
+function getTradeQueries() {
+  if (!_tradeQueries) {
+    _tradeQueries = {
+      insert: db.prepare(`
+        INSERT OR IGNORE INTO trades (agent_id, tx_signature, timestamp, action, token_mint, token_symbol, amount_sol, amount_tokens, price_usd, dex, pnl_usd)
+        VALUES (@agent_id, @tx_signature, @timestamp, @action, @token_mint, @token_symbol, @amount_sol, @amount_tokens, @price_usd, @dex, @pnl_usd)
+      `),
+      getByAgent: db.prepare(`SELECT * FROM trades WHERE agent_id = ? ORDER BY timestamp DESC LIMIT ?`),
+      getRecent: db.prepare(`
+        SELECT t.*, a.name as agent_name, a.wallet_address as agent_wallet
+        FROM trades t
+        JOIN agents a ON t.agent_id = a.id
+        WHERE a.verified = TRUE
+        ORDER BY t.timestamp DESC
+        LIMIT ?
+      `),
+    };
+  }
+  return _tradeQueries;
+}
+
+function getLeaderboardQueries() {
+  if (!_leaderboardQueries) {
+    _leaderboardQueries = {
+      upsert: db.prepare(`
+        INSERT INTO leaderboard (agent_id, pnl_24h, pnl_7d, pnl_all_time, win_rate, total_trades, updated_at)
+        VALUES (@agent_id, @pnl_24h, @pnl_7d, @pnl_all_time, @win_rate, @total_trades, CURRENT_TIMESTAMP)
+        ON CONFLICT(agent_id) DO UPDATE SET
+          pnl_24h = @pnl_24h,
+          pnl_7d = @pnl_7d,
+          pnl_all_time = @pnl_all_time,
+          win_rate = @win_rate,
+          total_trades = @total_trades,
+          updated_at = CURRENT_TIMESTAMP
+      `),
+      getTop: db.prepare(`
+        SELECT l.*, a.name, a.wallet_address, a.twitter, a.moltbook
+        FROM leaderboard l
+        JOIN agents a ON l.agent_id = a.id
+        WHERE a.verified = TRUE
+        ORDER BY l.pnl_all_time DESC
+        LIMIT ?
+      `),
+    };
+  }
+  return _leaderboardQueries;
+}
+
+function getSubscriberQueries() {
+  if (!_subscriberQueries) {
+    _subscriberQueries = {
+      upsert: db.prepare(`
+        INSERT INTO subscribers (chat_id, subscribed_all)
+        VALUES (?, TRUE)
+        ON CONFLICT(chat_id) DO UPDATE SET subscribed_all = TRUE
+      `),
+      getByChatId: db.prepare(`SELECT * FROM subscribers WHERE chat_id = ?`),
+      getAll: db.prepare(`SELECT * FROM subscribers`),
+      remove: db.prepare(`DELETE FROM subscribers WHERE chat_id = ?`),
+    };
+  }
+  return _subscriberQueries;
+}
+
+// Export as getters
 export const agentQueries = {
-  create: db.prepare(`
-    INSERT INTO agents (wallet_address, name, description, twitter, telegram, moltbook)
-    VALUES (@wallet_address, @name, @description, @twitter, @telegram, @moltbook)
-  `),
-
-  getByWallet: db.prepare(`
-    SELECT * FROM agents WHERE wallet_address = ?
-  `),
-
-  getById: db.prepare(`
-    SELECT * FROM agents WHERE id = ?
-  `),
-
-  getPending: db.prepare(`
-    SELECT * FROM agents WHERE status = 'pending' ORDER BY created_at ASC
-  `),
-
-  getVerified: db.prepare(`
-    SELECT * FROM agents WHERE verified = TRUE ORDER BY name ASC
-  `),
-
-  approve: db.prepare(`
-    UPDATE agents 
-    SET verified = TRUE, status = 'approved', verification_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `),
-
-  reject: db.prepare(`
-    UPDATE agents SET status = 'rejected', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `),
-
-  delist: db.prepare(`
-    UPDATE agents SET verified = FALSE, status = 'delisted', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `),
+  get create() { return getAgentQueries().create; },
+  get getByWallet() { return getAgentQueries().getByWallet; },
+  get getById() { return getAgentQueries().getById; },
+  get getPending() { return getAgentQueries().getPending; },
+  get getVerified() { return getAgentQueries().getVerified; },
+  get approve() { return getAgentQueries().approve; },
+  get reject() { return getAgentQueries().reject; },
+  get delist() { return getAgentQueries().delist; },
 };
 
-// Trade operations
 export const tradeQueries = {
-  insert: db.prepare(`
-    INSERT OR IGNORE INTO trades (agent_id, tx_signature, timestamp, action, token_mint, token_symbol, amount_sol, amount_tokens, price_usd, dex, pnl_usd)
-    VALUES (@agent_id, @tx_signature, @timestamp, @action, @token_mint, @token_symbol, @amount_sol, @amount_tokens, @price_usd, @dex, @pnl_usd)
-  `),
-
-  getByAgent: db.prepare(`
-    SELECT * FROM trades WHERE agent_id = ? ORDER BY timestamp DESC LIMIT ?
-  `),
-
-  getRecent: db.prepare(`
-    SELECT t.*, a.name as agent_name, a.wallet_address as agent_wallet
-    FROM trades t
-    JOIN agents a ON t.agent_id = a.id
-    WHERE a.verified = TRUE
-    ORDER BY t.timestamp DESC
-    LIMIT ?
-  `),
+  get insert() { return getTradeQueries().insert; },
+  get getByAgent() { return getTradeQueries().getByAgent; },
+  get getRecent() { return getTradeQueries().getRecent; },
 };
 
-// Leaderboard operations
 export const leaderboardQueries = {
-  upsert: db.prepare(`
-    INSERT INTO leaderboard (agent_id, pnl_24h, pnl_7d, pnl_all_time, win_rate, total_trades, updated_at)
-    VALUES (@agent_id, @pnl_24h, @pnl_7d, @pnl_all_time, @win_rate, @total_trades, CURRENT_TIMESTAMP)
-    ON CONFLICT(agent_id) DO UPDATE SET
-      pnl_24h = @pnl_24h,
-      pnl_7d = @pnl_7d,
-      pnl_all_time = @pnl_all_time,
-      win_rate = @win_rate,
-      total_trades = @total_trades,
-      updated_at = CURRENT_TIMESTAMP
-  `),
-
-  getTop: db.prepare(`
-    SELECT l.*, a.name, a.wallet_address, a.twitter, a.moltbook
-    FROM leaderboard l
-    JOIN agents a ON l.agent_id = a.id
-    WHERE a.verified = TRUE
-    ORDER BY l.pnl_all_time DESC
-    LIMIT ?
-  `),
-
-  getByTimeframe: db.prepare(`
-    SELECT l.*, a.name, a.wallet_address, a.twitter, a.moltbook
-    FROM leaderboard l
-    JOIN agents a ON l.agent_id = a.id
-    WHERE a.verified = TRUE
-    ORDER BY 
-      CASE ? 
-        WHEN '24h' THEN l.pnl_24h
-        WHEN '7d' THEN l.pnl_7d
-        ELSE l.pnl_all_time
-      END DESC
-    LIMIT ?
-  `),
+  get upsert() { return getLeaderboardQueries().upsert; },
+  get getTop() { return getLeaderboardQueries().getTop; },
 };
 
-// Subscriber operations
 export const subscriberQueries = {
-  upsert: db.prepare(`
-    INSERT INTO subscribers (chat_id, subscribed_all)
-    VALUES (?, TRUE)
-    ON CONFLICT(chat_id) DO UPDATE SET subscribed_all = TRUE
-  `),
-
-  getByChatId: db.prepare(`
-    SELECT * FROM subscribers WHERE chat_id = ?
-  `),
-
-  getAll: db.prepare(`
-    SELECT * FROM subscribers
-  `),
-
-  remove: db.prepare(`
-    DELETE FROM subscribers WHERE chat_id = ?
-  `),
+  get upsert() { return getSubscriberQueries().upsert; },
+  get getByChatId() { return getSubscriberQueries().getByChatId; },
+  get getAll() { return getSubscriberQueries().getAll; },
+  get remove() { return getSubscriberQueries().remove; },
 };
