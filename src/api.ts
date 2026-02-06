@@ -12,7 +12,10 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const CACHE_DIR = path.join(__dirname, '..', 'cache');
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://moltscan.vercel.app', 'https://moltscan.com'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Health check
