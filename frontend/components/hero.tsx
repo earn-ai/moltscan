@@ -9,7 +9,7 @@ interface HeroProps {
 
 export function Hero({ activeTab = 'feed', onTabChange }: HeroProps) {
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-b">
+    <div className="bg-gradient-to-br from-purple-950/40 to-blue-950/40 border-b border-white/10">
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2">
