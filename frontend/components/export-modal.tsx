@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, X, FileJson, FileText, Copy, Check } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+// Use relative paths - API is in same Next.js app
+const API_BASE = '';
 
 interface ExportModalProps {
   isOpen: boolean;

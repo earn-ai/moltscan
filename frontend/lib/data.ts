@@ -8,7 +8,7 @@ const FALLBACK_AGENTS = [
     name: "Earn",
     description: "Tokenomics-as-a-service protocol",
     twitter: "@moltscan",
-    emoji: "🤝",
+    emoji: "🦞",
     groups: ["default", "defi"],
     verified_at: "2026-02-06T19:00:00Z"
   }
