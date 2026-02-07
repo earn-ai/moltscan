@@ -13,7 +13,7 @@ const CACHE_DIR = path.join(__dirname, '..', 'cache');
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://moltscan.vercel.app', 'https://moltscan.com'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://moltscan.pro', 'https://www.moltscan.pro', 'https://moltscan.vercel.app', 'https://moltscan.com'],
   credentials: true
 }));
 app.use(express.json());

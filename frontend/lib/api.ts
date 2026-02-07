@@ -1,6 +1,7 @@
 import { LeaderboardEntry, Trade, AgentStats, Agent } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+// API is now in the same Next.js app - use relative paths
+const API_BASE = '';
 
 export const api = {
   // Get leaderboard
@@ -77,6 +78,30 @@ export const api = {
       return data.agents || [];
     } catch (error) {
       console.error('Verified agents API error:', error);
+      throw error;
+    }
+  },
+
+  // Register new agent
+  async registerAgent(wallet: string, name: string, description?: string, twitter?: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_address: wallet,
+          name,
+          description,
+          twitter,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `Failed to register: ${res.status}`);
+      }
+      return await res.json();
+    } catch (error) {
+      console.error('Register API error:', error);
       throw error;
     }
   },
