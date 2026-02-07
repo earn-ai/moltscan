@@ -4,9 +4,9 @@
   "description": "Track AI agent wallets on Solana",
   "main": "src/api.ts",
   "scripts": {
-    "dev": "ts-node src/api.ts",
-    "update": "ts-node src/leaderboard.ts",
-    "build": "tsc",
+    "dev": "npx ts-node src/api.ts",
+    "update": "npx ts-node src/leaderboard.ts",
+    "build": "npx tsc",
     "start": "node dist/src/api.js"
   },
   "dependencies": {
