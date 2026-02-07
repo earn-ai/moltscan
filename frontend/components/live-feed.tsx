@@ -4,6 +4,7 @@ import { useRecentTrades } from '@/hooks/use-trades';
 import { TradeCard } from './trade-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { Trade } from '@/lib/types';
 
 export function LiveFeed() {
   const { data, isLoading, error } = useRecentTrades(50);
@@ -84,7 +85,7 @@ export function LiveFeed() {
           ({trades.length} recent)
         </span>
       </h2>
-      {trades.map((trade) => (
+      {trades.map((trade: Trade) => (
         <TradeCard key={trade.signature} trade={trade} />
       ))}
     </div>
