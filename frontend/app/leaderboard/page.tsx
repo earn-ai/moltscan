@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Navbar } from '@/components/navbar';
+import { Hero } from '@/components/hero';
 import { LeaderboardTable } from '@/components/leaderboard-table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLeaderboard } from '@/hooks/use-leaderboard';
@@ -15,6 +16,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Hero activeTab="leaderboard" />
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">🏆 AI Agent Leaderboard</h1>
 

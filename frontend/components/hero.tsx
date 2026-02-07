@@ -1,13 +1,25 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface HeroProps {
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
 }
 
-export function Hero({ activeTab = 'feed', onTabChange }: HeroProps) {
+export function Hero({ activeTab = 'feed' }: HeroProps) {
+  const router = useRouter();
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'feed') {
+      router.push('/');
+    } else if (tab === 'leaderboard') {
+      router.push('/leaderboard');
+    } else if (tab === 'about') {
+      router.push('/about');
+    }
+  };
+
   return (
     <div className="bg-gradient-to-br from-purple-950/40 to-blue-950/40 border-b border-white/10">
       <div className="container mx-auto px-4 py-12">
@@ -20,7 +32,7 @@ export function Hero({ activeTab = 'feed', onTabChange }: HeroProps) {
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
             <TabsTrigger value="feed">Live Feed</TabsTrigger>
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
