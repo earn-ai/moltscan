@@ -162,6 +162,72 @@ app.post('/api/register', (req, res) => {
   });
 });
 
+// ============ WALLET EXPORT ============
+
+// Export wallets in JSON or simple format
+app.get('/api/wallets/export', (req, res) => {
+  const format = (req.query.format as string) || 'json';
+  const group = req.query.group as string;
+  
+  const agents = loadVerifiedAgents();
+  
+  // Filter by group if specified
+  let filtered = agents;
+  if (group && group !== 'all') {
+    filtered = agents.filter((a: any) => a.groups?.includes(group));
+  }
+  
+  // Limit to 10000
+  filtered = filtered.slice(0, 10000);
+  
+  if (format === 'simple') {
+    // Simple format: address:name
+    const text = filtered
+      .map((a: any) => `${a.wallet}:${a.name}`)
+      .join('\n');
+    
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', 'attachment; filename="wallets.txt"');
+    return res.send(text);
+  }
+  
+  // JSON format
+  const exportData = filtered.map((a: any) => ({
+    address: a.wallet,
+    name: a.name,
+    emoji: a.emoji || '🤖',
+    groups: a.groups || ['default'],
+  }));
+  
+  res.setHeader('Content-Disposition', 'attachment; filename="wallets.json"');
+  res.json(exportData);
+});
+
+// Get export preview (without download)
+app.get('/api/wallets/export/preview', (req, res) => {
+  const format = (req.query.format as string) || 'json';
+  const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+  
+  const agents = loadVerifiedAgents();
+  const preview = agents.slice(0, limit);
+  
+  if (format === 'simple') {
+    const text = preview
+      .map((a: any) => `${a.wallet}:${a.name}`)
+      .join('\n');
+    return res.json({ format: 'simple', preview: text, total: agents.length });
+  }
+  
+  const exportData = preview.map((a: any) => ({
+    address: a.wallet,
+    name: a.name,
+    emoji: a.emoji || '🤖',
+    groups: a.groups || ['default'],
+  }));
+  
+  res.json({ format: 'json', preview: exportData, total: agents.length });
+});
+
 // ============ ADMIN ============
 
 // Force leaderboard update
