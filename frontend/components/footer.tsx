@@ -8,7 +8,7 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg" />
+            <span className="text-2xl">🦞</span>
             <span className="font-bold">MOLTSCAN</span>
           </div>
           
